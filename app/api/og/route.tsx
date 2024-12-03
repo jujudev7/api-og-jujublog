@@ -2,21 +2,17 @@ import { siteConfig } from "@/config/site";
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 
-export const runtime = "edge";
+export const dynamic = "force-dynamic"; // Enable dynamic rendering
 
 export async function GET(req: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   try {
-    // Charger la police Inter-Bold à partir du dossier public
     const interBold = await fetch(
       `${baseUrl}/assets/fonts/Inter-Bold.ttf`
     ).then((res) => res.arrayBuffer());
 
-    // Récupérer les paramètres de requête
-    const { searchParams } = req.nextUrl;
-    const title = searchParams.get("title");
+    const title = req.nextUrl.searchParams.get("title");
 
-    // Si aucun titre n'est fourni, utiliser une image par défaut
     if (!title) {
       const defaultImageResponse = await fetch(
         `${baseUrl}/opengraph-image.jpg`
@@ -32,15 +28,12 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      // Si l'image par défaut ne peut pas être chargée
       return new Response("Default image could not be loaded", { status: 500 });
     }
 
-    // Générer un heading (tronqué si trop long)
     const heading =
       title.length > 140 ? `${title.substring(0, 140)}...` : title;
 
-    // Générer l'image OpenGraph
     const imageResponse = new ImageResponse(
       (
         <div
@@ -93,7 +86,6 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    // Retourner la réponse avec les headers appropriés
     return new Response(imageResponse.body, {
       headers: {
         "Content-Type": "image/png",
@@ -103,8 +95,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error generating OG image:", error);
-
-    // Si une erreur survient, renvoyer un message d'erreur
     return new Response("Failed to generate OG image", { status: 500 });
   }
 }
